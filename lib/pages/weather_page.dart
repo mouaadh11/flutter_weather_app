@@ -41,20 +41,43 @@ class _WeatherPageState extends State<WeatherPage> {
   }
 
   String _getAnimationForCondition(String condition) {
-    if (condition.isEmpty) return 'assets/animations/sunny.json'; // Default animation for empty condition
+    if (condition.isEmpty) {
+      return 'assets/animations/sunny.json'; // Default
+    }
+    
     switch (condition.toLowerCase()) {
       case 'clear':
         return 'assets/animations/sunny.json';
+
       case 'clouds':
         return 'assets/animations/cloudy.json';
+
       case 'rain':
+      case 'drizzle':
         return 'assets/animations/rainy.json';
+
+      case 'thunderstorm':
+        return 'assets/animations/storm.json';
+
       case 'snow':
         return 'assets/animations/snowy.json';
+
+      case 'mist':
+      case 'smoke':
+      case 'haze':
+      case 'dust':
+      case 'fog':
+      case 'sand':
+      case 'ash':
+      case 'squall':
+      case 'tornado':
+        return 'assets/animations/windy.json';
+
       default:
-        return 'assets/animations/windy.json'; // Default animation
+        return 'assets/animations/windy.json'; // Fallback
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,8 +88,8 @@ class _WeatherPageState extends State<WeatherPage> {
             Text(_weather?.city ?? "Loading the city"),
             Lottie.asset(
               _getAnimationForCondition(_weather?.condition ?? ""),
-              width: 150,
-              height: 150,
+              width: 250,
+              height: 250,
             ),
             Text("${_weather?.temperature.round()}°C"),
             Text(_weather?.condition ?? "Loading the condition"),
