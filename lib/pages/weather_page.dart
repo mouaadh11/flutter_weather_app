@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_weather_app/models/weather.dart';
 import 'package:flutter_weather_app/services/weather_service.dart';
@@ -186,20 +188,44 @@ class _WeatherPageState extends State<WeatherPage> {
       children: [
         Row(
           children: [
-            _buildMetricTile(Icons.thermostat_rounded, 'Feels like', '${_weather!.feelsLike.toStringAsFixed(0)}°C'),
-            _buildMetricTile(Icons.water_drop, 'Humidity', '${_weather!.humidity}%'),
+            _buildMetricTile(
+              Icons.thermostat_rounded,
+              'Feels like',
+              '${_weather!.feelsLike.toStringAsFixed(0)}°C',
+            ),
+            _buildMetricTile(
+              Icons.water_drop,
+              'Humidity',
+              '${_weather!.humidity}%',
+            ),
           ],
         ),
         Row(
           children: [
-            _buildMetricTile(Icons.air, 'Wind', '${_weather!.windSpeed.toStringAsFixed(1)} m/s'),
-            _buildMetricTile(Icons.speed, 'Pressure', '${_weather!.pressure} hPa'),
+            _buildMetricTile(
+              Icons.air,
+              'Wind',
+              '${_weather!.windSpeed.toStringAsFixed(1)} m/s',
+            ),
+            _buildMetricTile(
+              Icons.speed,
+              'Pressure',
+              '${_weather!.pressure} hPa',
+            ),
           ],
         ),
         Row(
           children: [
-            _buildMetricTile(Icons.wb_sunny, 'Sunrise', _formatTime(_weather!.sunrise)),
-            _buildMetricTile(Icons.nights_stay, 'Sunset', _formatTime(_weather!.sunset)),
+            _buildMetricTile(
+              Icons.wb_sunny,
+              'Sunrise',
+              _formatTime(_weather!.sunrise),
+            ),
+            _buildMetricTile(
+              Icons.nights_stay,
+              'Sunset',
+              _formatTime(_weather!.sunset),
+            ),
           ],
         ),
       ],
@@ -211,28 +237,83 @@ class _WeatherPageState extends State<WeatherPage> {
     final selectedCity = await showDialog<String>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Search city'),
-          content: TextField(
-            controller: controller,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              hintText: 'Enter a city name',
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Search city',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: controller,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Enter a city name',
+                        hintStyle: const TextStyle(color: Colors.white70),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha:  0.1),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      autofocus: true,
+                      onSubmitted: (value) =>
+                          Navigator.of(context).pop(value.trim()),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withValues(alpha: 0.2),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                          ),
+                          onPressed: () =>
+                              Navigator.of(context).pop(controller.text.trim()),
+                          child: const Text('Search'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            autofocus: true,
-            onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-              child: const Text('Search'),
-            ),
-          ],
         );
+        
       },
     );
 
@@ -283,53 +364,68 @@ class _WeatherPageState extends State<WeatherPage> {
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-              child:  _isLoading
-                    ? SizedBox(
-                        height: height - kToolbarHeight - MediaQuery.of(context).padding.vertical,
-                      child: const Center(child: CircularProgressIndicator(color: Colors.white)))
-                    : _errorMessage != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.error_outline, color: Colors.white, size: 72),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'Unable to load weather',
-                                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  _errorMessage!,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(color: Colors.white70),
-                                ),
-                                const SizedBox(height: 20),
-                                ElevatedButton(
-                                  onPressed: _fetchWeather,
-                                  child: const Text('Retry'),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Column( // the erreur is here
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // const SizedBox(height: 10),
-                              _buildWeatherCard(),
-                              const SizedBox(height: 24),
-                              _buildDetailsSection(),
-                              const SizedBox(height: 20),
-                              Text(
-                                _lastUpdated == null
-                                    ? 'Updated just now'
-                                    : 'Last updated: ${_formatTime(_lastUpdated!)}',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white70),
-                              ),
-                              const SizedBox(height: 10),
-                            ],
+              child: _isLoading
+                  ? SizedBox(
+                      height:
+                          height -
+                          kToolbarHeight -
+                          MediaQuery.of(context).padding.vertical,
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    )
+                  : _errorMessage != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.white,
+                            size: 72,
                           ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Unable to load weather',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: _fetchWeather,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      // the erreur is here
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // const SizedBox(height: 10),
+                        _buildWeatherCard(),
+                        const SizedBox(height: 24),
+                        _buildDetailsSection(),
+                        const SizedBox(height: 20),
+                        Text(
+                          _lastUpdated == null
+                              ? 'Updated just now'
+                              : 'Last updated: ${_formatTime(_lastUpdated!)}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ),
             ),
           ),
         ),
