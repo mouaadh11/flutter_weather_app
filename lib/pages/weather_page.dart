@@ -15,6 +15,7 @@ class _WeatherPageState extends State<WeatherPage> {
   bool _isLoading = true;
   String? _errorMessage;
   DateTime? _lastUpdated;
+  String? _searchedCity;
   final WeatherService _weatherService = WeatherService();
 
   @override
@@ -23,18 +24,26 @@ class _WeatherPageState extends State<WeatherPage> {
     _fetchWeather();
   }
 
-  Future<void> _fetchWeather() async {
+  Future<void> _fetchWeather({String? city}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final location = await _weatherService.getLocation();
-      final weather = await _weatherService.fetchWeatherByLocation(
-        location['lat']!,
-        location['lon']!,
-      );
+      final Weather weather;
+
+      if (city != null && city.isNotEmpty) {
+        weather = await _weatherService.fetchWeatherByCity(city);
+        _searchedCity = city;
+      } else {
+        final location = await _weatherService.getLocation();
+        weather = await _weatherService.fetchWeatherByLocation(
+          location['lat']!,
+          location['lon']!,
+        );
+        _searchedCity = null;
+      }
 
       if (!mounted) return;
       setState(() {
@@ -47,12 +56,11 @@ class _WeatherPageState extends State<WeatherPage> {
         _errorMessage = error.toString();
       });
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -98,7 +106,7 @@ class _WeatherPageState extends State<WeatherPage> {
         margin: const EdgeInsets.all(6),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.18),
+          color: const Color.fromRGBO(255, 255, 255, 0.18),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
@@ -129,7 +137,7 @@ class _WeatherPageState extends State<WeatherPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: const Color.fromRGBO(255, 255, 255, 0.14),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: Colors.white24),
       ),
@@ -198,6 +206,41 @@ class _WeatherPageState extends State<WeatherPage> {
     );
   }
 
+  Future<void> _showCitySearchDialog() async {
+    final controller = TextEditingController(text: _searchedCity ?? '');
+    final selectedCity = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Search city'),
+          content: TextField(
+            controller: controller,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              hintText: 'Enter a city name',
+            ),
+            autofocus: true,
+            onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+              child: const Text('Search'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (selectedCity != null && selectedCity.isNotEmpty) {
+      await _fetchWeather(city: selectedCity);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
@@ -211,16 +254,19 @@ class _WeatherPageState extends State<WeatherPage> {
           fontSize: 22,
           fontWeight: FontWeight.bold,
         ),
-        
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchWeather,
+            icon: const Icon(Icons.search),
+            onPressed: _showCitySearchDialog,
             color: Colors.white,
           ),
-          
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _fetchWeather(city: _searchedCity),
+            color: Colors.white,
+          ),
         ],
       ),
       body: Container(

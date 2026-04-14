@@ -39,4 +39,18 @@ class WeatherService {
       throw Exception('Failed to load weather');
     }
   }
+
+  Future<Weather> fetchWeatherByCity(String city) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl?q=${Uri.encodeComponent(city)}&appid=$_apiKey&units=metric'),
+    );
+
+    if (response.statusCode == 200) {
+      return Weather.fromJson(json.decode(response.body) as Map<String, dynamic>);
+    } else if (response.statusCode == 404) {
+      throw Exception('City not found. Please try another name.');
+    } else {
+      throw Exception('Failed to load weather for "$city"');
+    }
+  }
 }
