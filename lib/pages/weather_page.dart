@@ -34,12 +34,17 @@ class _WeatherPageState extends State<WeatherPage> {
 
     try {
       final Weather weather;
-
-      if (city != null && city.isNotEmpty) {
+      print(
+        'Fetching weather for city: $city, last searched city: $_searchedCity',
+      );
+      if (city != null && city.isNotEmpty && city != _searchedCity) {
         weather = await _weatherService.fetchWeatherByCity(city);
         _searchedCity = city;
       } else {
         final location = await _weatherService.getLocation();
+        print(
+          'city is: ${_weatherService.getCityName(location['lat']!, location['lon']!)}',
+        );
         weather = await _weatherService.fetchWeatherByLocation(
           location['lat']!,
           location['lon']!,
@@ -249,7 +254,9 @@ class _WeatherPageState extends State<WeatherPage> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -271,7 +278,7 @@ class _WeatherPageState extends State<WeatherPage> {
                         hintText: 'Enter a city name',
                         hintStyle: const TextStyle(color: Colors.white70),
                         filled: true,
-                        fillColor: Colors.white.withValues(alpha:  0.1),
+                        fillColor: Colors.white.withValues(alpha: 0.1),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -297,7 +304,9 @@ class _WeatherPageState extends State<WeatherPage> {
                         const SizedBox(width: 10),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withValues(alpha: 0.2),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.2,
+                            ),
                             foregroundColor: Colors.white,
                             elevation: 0,
                           ),
@@ -313,7 +322,6 @@ class _WeatherPageState extends State<WeatherPage> {
             ),
           ),
         );
-        
       },
     );
 

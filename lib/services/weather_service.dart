@@ -5,7 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
 class WeatherService {
-  static const String _baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
+  static const String _baseUrl =
+      'https://api.openweathermap.org/data/2.5/weather';
   static const String _apiKey = 'affb83808f858a592608394dd66cc5fb';
 
   Future<Map<String, double>> getLocation() async {
@@ -21,12 +22,8 @@ class WeatherService {
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
 
-    return {
-      'lat': position.latitude,
-      'lon': position.longitude,
-    };
+    return {'lat': position.latitude, 'lon': position.longitude};
   }
-
 
   Future<Weather> fetchWeatherByLocation(double lat, double lon) async {
     final response = await http.get(
@@ -34,7 +31,9 @@ class WeatherService {
     );
 
     if (response.statusCode == 200) {
-      return Weather.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      return Weather.fromJson(
+        json.decode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load weather');
     }
@@ -42,15 +41,32 @@ class WeatherService {
 
   Future<Weather> fetchWeatherByCity(String city) async {
     final response = await http.get(
-      Uri.parse('$_baseUrl?q=${Uri.encodeComponent(city)}&appid=$_apiKey&units=metric'),
+      Uri.parse(
+        '$_baseUrl?q=${Uri.encodeComponent(city)}&appid=$_apiKey&units=metric',
+      ),
     );
 
     if (response.statusCode == 200) {
-      return Weather.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      return Weather.fromJson(
+        json.decode(response.body) as Map<String, dynamic>,
+      );
     } else if (response.statusCode == 404) {
       throw Exception('City not found. Please try another name.');
     } else {
       throw Exception('Failed to load weather for "$city"');
+    }
+  }
+
+  Future<String> getCityName(double lat, double lon) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl?lat=$lat&lon=$lon&appid=$_apiKey&units=metric'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      return data['city'] as String;
+    } else {
+      throw Exception('Failed to get city name');
     }
   }
 }
