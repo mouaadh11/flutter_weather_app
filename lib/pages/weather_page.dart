@@ -26,31 +26,36 @@ class _WeatherPageState extends State<WeatherPage> {
     _fetchWeather();
   }
 
-  Future<void> _fetchWeather({String? city}) async {
+  Future<void> _fetchWeather({String? city }) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
+    print ('Fetching weather data... City: $city, SearchedCity: $_searchedCity');
+    if ( (_searchedCity == null || _searchedCity!.isEmpty) && (city == null || city.isEmpty)) {
+      print(  'No city provided, fetching getting city name from location...');
+      city =await _weatherService.getCityName(null, null) as String?;
+    } else {
+      city = city ?? _searchedCity;
+      print('City provided: $city');
+    }
 
     try {
       final Weather weather;
-      print(
-        'Fetching weather for city: $city, last searched city: $_searchedCity',
-      );
-      if (city != null && city.isNotEmpty && city != _searchedCity) {
+      if (city != null && city.isNotEmpty) {
+        print('Fetching weather for city: $city');
         weather = await _weatherService.fetchWeatherByCity(city);
         _searchedCity = city;
-      } else {
-        final location = await _weatherService.getLocation();
-        print(
-          'city is: ${_weatherService.getCityName(location['lat']!, location['lon']!)}',
-        );
-        weather = await _weatherService.fetchWeatherByLocation(
-          location['lat']!,
-          location['lon']!,
-        );
-        _searchedCity = null;
       }
+        else {
+          print('Fetching weather for current location');
+          final location = await _weatherService.getLocation();
+          weather = await _weatherService.fetchWeatherByLocation(
+            location['lat']!,
+            location['lon']!,
+          );
+          _searchedCity = weather.city;
+        }
 
       if (!mounted) return;
       setState(() {
@@ -238,7 +243,7 @@ class _WeatherPageState extends State<WeatherPage> {
   }
 
   Future<void> _showCitySearchDialog() async {
-    final controller = TextEditingController(text: _searchedCity ?? '');
+    final controller = TextEditingController(text: '');
     final selectedCity = await showDialog<String>(
       context: context,
       builder: (context) {

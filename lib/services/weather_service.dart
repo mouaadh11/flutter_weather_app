@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_weather_app/models/weather.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
@@ -57,16 +58,17 @@ class WeatherService {
     }
   }
 
-  Future<String> getCityName(double lat, double lon) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl?lat=$lat&lon=$lon&appid=$_apiKey&units=metric'),
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      return data['city'] as String;
+  Future<String> getCityName(double? lat, double? lon) async {
+    if (lat == null || lon == null) {
+      Map<String, double> location = await getLocation();
+      lat = location['lat'];
+      lon = location['lon'];  
+    }
+    List<Placemark> placemarks = await placemarkFromCoordinates(lat!, lon!);
+    if (placemarks.isNotEmpty) {
+      return placemarks[0].locality ?? 'Unknown';
     } else {
-      throw Exception('Failed to get city name');
+      return 'Unknown'; 
     }
   }
 }
