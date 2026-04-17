@@ -2,88 +2,35 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_weather_app/models/weather.dart';
-import 'package:flutter_weather_app/services/weather_service.dart';
 import 'package:lottie/lottie.dart';
 
-class WeatherPage extends StatefulWidget {
-  const WeatherPage({super.key});
+class CityWeatherPage extends StatelessWidget {
+  final String city;
+  final Weather? weather;
+  final bool isLoading;
+  final String? errorMessage;
+  final DateTime? lastUpdated;
+  final Future<void> Function() onRefresh;
+  final Future<void> Function(String city)
+  onAddCity; // called when user confirms adding a city
 
-  @override
-  State<WeatherPage> createState() => _WeatherPageState();
-}
+  const CityWeatherPage({
+    super.key,
+    required this.city,
+    required this.weather,
+    required this.isLoading,
+    required this.onRefresh,
+    required this.onAddCity,
+    this.errorMessage,
+    this.lastUpdated,
+  });
 
-class _WeatherPageState extends State<WeatherPage> {
-  Weather? _weather;
-  bool _isLoading = true;
-  String? _errorMessage;
-  DateTime? _lastUpdated;
-  String? _searchedCity;
-  final WeatherService _weatherService = WeatherService();
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchWeather();
-  }
-
-  Future<void> _fetchWeather({String? city }) async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    print ('Fetching weather data... City: $city, SearchedCity: $_searchedCity');
-    if ( (_searchedCity == null || _searchedCity!.isEmpty) && (city == null || city.isEmpty)) {
-      print(  'No city provided, fetching getting city name from location...');
-      city =await _weatherService.getCityName(null, null) as String?;
-    } else {
-      city = city ?? _searchedCity;
-      print('City provided: $city');
-    }
-
-    try {
-      final Weather weather;
-      if (city != null && city.isNotEmpty) {
-        print('Fetching weather for city: $city');
-        weather = await _weatherService.fetchWeatherByCity(city);
-        _searchedCity = city;
-      }
-        else {
-          print('Fetching weather for current location');
-          final location = await _weatherService.getLocation();
-          weather = await _weatherService.fetchWeatherByLocation(
-            location['lat']!,
-            location['lon']!,
-          );
-          _searchedCity = weather.city;
-        }
-
-      if (!mounted) return;
-      setState(() {
-        _weather = weather;
-        _lastUpdated = DateTime.now();
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = error.toString();
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  String _formatTime(DateTime dateTime) {
+  String _formatTime(BuildContext context, DateTime dateTime) {
     return TimeOfDay.fromDateTime(dateTime).format(context);
   }
 
   String _getAnimationForCondition(String condition) {
-    if (condition.isEmpty) {
-      return 'assets/animations/sunny.json';
-    }
+    if (condition.isEmpty) return 'assets/animations/sunny.json';
 
     switch (condition.toLowerCase()) {
       case 'clear':
@@ -156,7 +103,7 @@ class _WeatherPageState extends State<WeatherPage> {
       child: Column(
         children: [
           Text(
-            _weather!.city,
+            weather!.city, // ✅ was _weather!.city
             style: const TextStyle(
               color: Colors.white,
               fontSize: 34,
@@ -165,7 +112,7 @@ class _WeatherPageState extends State<WeatherPage> {
           ),
           const SizedBox(height: 10),
           Text(
-            '${_weather!.temperature.toStringAsFixed(0)}°C',
+            '${weather!.temperature.toStringAsFixed(0)}°C',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 62,
@@ -174,7 +121,7 @@ class _WeatherPageState extends State<WeatherPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            _weather!.condition,
+            weather!.condition,
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 20,
@@ -183,7 +130,7 @@ class _WeatherPageState extends State<WeatherPage> {
           ),
           const SizedBox(height: 20),
           Lottie.asset(
-            _getAnimationForCondition(_weather!.condition),
+            _getAnimationForCondition(weather!.condition),
             width: 220,
             height: 220,
             fit: BoxFit.contain,
@@ -193,7 +140,8 @@ class _WeatherPageState extends State<WeatherPage> {
     );
   }
 
-  Widget _buildDetailsSection() {
+  Widget _buildDetailsSection(BuildContext context) {
+    // ✅ context passed in
     return Column(
       children: [
         Row(
@@ -201,12 +149,12 @@ class _WeatherPageState extends State<WeatherPage> {
             _buildMetricTile(
               Icons.thermostat_rounded,
               'Feels like',
-              '${_weather!.feelsLike.toStringAsFixed(0)}°C',
+              '${weather!.feelsLike.toStringAsFixed(0)}°C',
             ),
             _buildMetricTile(
               Icons.water_drop,
               'Humidity',
-              '${_weather!.humidity}%',
+              '${weather!.humidity}%',
             ),
           ],
         ),
@@ -215,12 +163,12 @@ class _WeatherPageState extends State<WeatherPage> {
             _buildMetricTile(
               Icons.air,
               'Wind',
-              '${_weather!.windSpeed.toStringAsFixed(1)} m/s',
+              '${weather!.windSpeed.toStringAsFixed(1)} m/s',
             ),
             _buildMetricTile(
               Icons.speed,
               'Pressure',
-              '${_weather!.pressure} hPa',
+              '${weather!.pressure} hPa',
             ),
           ],
         ),
@@ -229,12 +177,12 @@ class _WeatherPageState extends State<WeatherPage> {
             _buildMetricTile(
               Icons.wb_sunny,
               'Sunrise',
-              _formatTime(_weather!.sunrise),
+              _formatTime(context, weather!.sunrise), // ✅ context passed
             ),
             _buildMetricTile(
               Icons.nights_stay,
               'Sunset',
-              _formatTime(_weather!.sunset),
+              _formatTime(context, weather!.sunset),
             ),
           ],
         ),
@@ -242,8 +190,9 @@ class _WeatherPageState extends State<WeatherPage> {
     );
   }
 
-  Future<void> _showCitySearchDialog() async {
-    final controller = TextEditingController(text: '');
+  Future<void> _showCitySearchDialog(BuildContext context) async {
+    // ✅ context passed in
+    final controller = TextEditingController();
     final selectedCity = await showDialog<String>(
       context: context,
       builder: (context) {
@@ -275,7 +224,6 @@ class _WeatherPageState extends State<WeatherPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     TextField(
                       controller: controller,
                       style: const TextStyle(color: Colors.white),
@@ -293,9 +241,7 @@ class _WeatherPageState extends State<WeatherPage> {
                       onSubmitted: (value) =>
                           Navigator.of(context).pop(value.trim()),
                     ),
-
                     const SizedBox(height: 20),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -331,7 +277,7 @@ class _WeatherPageState extends State<WeatherPage> {
     );
 
     if (selectedCity != null && selectedCity.isNotEmpty) {
-      await _fetchWeather(city: selectedCity);
+      await onAddCity(selectedCity); // ✅ was commented out, now uses callback
     }
   }
 
@@ -353,12 +299,12 @@ class _WeatherPageState extends State<WeatherPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: _showCitySearchDialog,
+            onPressed: () => _showCitySearchDialog(context), // ✅ context passed
             color: Colors.white,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => _fetchWeather(city: _searchedCity),
+            onPressed: onRefresh, // ✅ uses callback prop
             color: Colors.white,
           ),
         ],
@@ -373,11 +319,12 @@ class _WeatherPageState extends State<WeatherPage> {
         ),
         child: SafeArea(
           child: RefreshIndicator(
-            onRefresh: _fetchWeather,
+            onRefresh: onRefresh, // ✅ uses callback prop
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-              child: _isLoading
+              child:
+                  isLoading // ✅ was _isLoading
                   ? SizedBox(
                       height:
                           height -
@@ -387,7 +334,8 @@ class _WeatherPageState extends State<WeatherPage> {
                         child: CircularProgressIndicator(color: Colors.white),
                       ),
                     )
-                  : _errorMessage != null
+                  : errorMessage !=
+                        null // ✅ was _errorMessage
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -408,31 +356,31 @@ class _WeatherPageState extends State<WeatherPage> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            _errorMessage!,
+                            errorMessage!,
                             textAlign: TextAlign.center,
                             style: const TextStyle(color: Colors.white70),
                           ),
                           const SizedBox(height: 20),
                           ElevatedButton(
-                            onPressed: _fetchWeather,
+                            onPressed: onRefresh, // ✅ uses callback prop
                             child: const Text('Retry'),
                           ),
                         ],
                       ),
                     )
                   : Column(
-                      // the erreur is here
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // const SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         _buildWeatherCard(),
                         const SizedBox(height: 24),
-                        _buildDetailsSection(),
+                        _buildDetailsSection(context), // ✅ context passed
                         const SizedBox(height: 20),
                         Text(
-                          _lastUpdated == null
+                          lastUpdated ==
+                                  null // ✅ was _lastUpdated
                               ? 'Updated just now'
-                              : 'Last updated: ${_formatTime(_lastUpdated!)}',
+                              : 'Last updated: ${_formatTime(context, lastUpdated!)}',
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.white70),
                         ),

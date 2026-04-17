@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_weather_app/pages/weather_page.dart';
+import 'package:flutter_weather_app/pages/home_page.dart';
+import 'package:flutter_weather_app/providers/weather_provider.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => WeatherProvider()..init(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 
@@ -16,7 +23,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: WeatherPage(),
+      home: const HomePage(),
     );
   }
 }
