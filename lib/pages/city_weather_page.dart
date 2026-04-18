@@ -11,8 +11,6 @@ class CityWeatherPage extends StatelessWidget {
   final String? errorMessage;
   final DateTime? lastUpdated;
   final Future<void> Function() onRefresh;
-  final Future<void> Function(String city)
-  onAddCity; // called when user confirms adding a city
 
   const CityWeatherPage({
     super.key,
@@ -20,7 +18,6 @@ class CityWeatherPage extends StatelessWidget {
     required this.weather,
     required this.isLoading,
     required this.onRefresh,
-    required this.onAddCity,
     this.errorMessage,
     this.lastUpdated,
   });
@@ -190,207 +187,68 @@ class CityWeatherPage extends StatelessWidget {
     );
   }
 
-  Future<void> _showCitySearchDialog(BuildContext context) async {
-    // ✅ context passed in
-    final controller = TextEditingController();
-    final selectedCity = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Search city',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: controller,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Enter a city name',
-                        hintStyle: const TextStyle(color: Colors.white70),
-                        filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.1),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      autofocus: true,
-                      onSubmitted: (value) =>
-                          Navigator.of(context).pop(value.trim()),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.2,
-                            ),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                          ),
-                          onPressed: () =>
-                              Navigator.of(context).pop(controller.text.trim()),
-                          child: const Text('Search'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    if (selectedCity != null && selectedCity.isNotEmpty) {
-      await onAddCity(selectedCity); // ✅ was commented out, now uses callback
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text('Weather Dashboard'),
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => _showCitySearchDialog(context), // ✅ context passed
-            color: Colors.white,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: onRefresh, // ✅ uses callback prop
-            color: Colors.white,
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF4A90E2), Color(0xFF50C9CE)],
-          ),
-        ),
-        child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: onRefresh, // ✅ uses callback prop
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-              child:
-                  isLoading // ✅ was _isLoading
-                  ? SizedBox(
-                      height:
-                          height -
-                          kToolbarHeight -
-                          MediaQuery.of(context).padding.vertical,
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                    )
-                  : errorMessage !=
-                        null // ✅ was _errorMessage
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: Colors.white,
-                            size: 72,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Unable to load weather',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: onRefresh, // ✅ uses callback prop
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 10),
-                        _buildWeatherCard(),
-                        const SizedBox(height: 24),
-                        _buildDetailsSection(context), // ✅ context passed
-                        const SizedBox(height: 20),
-                        Text(
-                          lastUpdated ==
-                                  null // ✅ was _lastUpdated
-                              ? 'Updated just now'
-                              : 'Last updated: ${_formatTime(context, lastUpdated!)}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                    ),
+    return isLoading // ✅ was _isLoading
+        ? SizedBox(
+            height:
+                height -
+                kToolbarHeight -
+                MediaQuery.of(context).padding.vertical,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white),
             ),
-          ),
-        ),
-      ),
-    );
+          )
+        : errorMessage !=
+              null // ✅ was _errorMessage
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 72),
+                const SizedBox(height: 16),
+                const Text(
+                  'Unable to load weather',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: onRefresh, // ✅ uses callback prop
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 10),
+              _buildWeatherCard(),
+              const SizedBox(height: 24),
+              _buildDetailsSection(context), // ✅ context passed
+              const SizedBox(height: 20),
+              Text(
+                lastUpdated ==
+                        null // ✅ was _lastUpdated
+                    ? 'Updated just now'
+                    : 'Last updated: ${_formatTime(context, lastUpdated!)}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 10),
+            ],
+          );
   }
 }
