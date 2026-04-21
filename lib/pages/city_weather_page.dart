@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_weather_app/models/weather.dart';
@@ -191,64 +190,70 @@ class CityWeatherPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
-    return isLoading // ✅ was _isLoading
-        ? SizedBox(
-            height:
-                height -
-                kToolbarHeight -
-                MediaQuery.of(context).padding.vertical,
-            child: const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          )
-        : errorMessage !=
-              null // ✅ was _errorMessage
-        ? Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 72),
-                const SizedBox(height: 16),
-                const Text(
-                  'Unable to load weather',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+    return RefreshIndicator(
+      onRefresh: onRefresh, // ✅ uses callback prop
+      child: SingleChildScrollView (
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical:0),
+        child: isLoading // ✅ was _isLoading
+            ? SizedBox(
+                height:
+                    height -
+                    kToolbarHeight -
+                    MediaQuery.of(context).padding.vertical,
+                child: const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+              )
+            : errorMessage !=
+                  null // ✅ was _errorMessage
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white, size: 72),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Unable to load weather',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: onRefresh, // ✅ uses callback prop
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 10),
+                  _buildWeatherCard(),
+                  const SizedBox(height: 24),
+                  _buildDetailsSection(context), // ✅ context passed
+                  const SizedBox(height: 20),
+                  Text(
+                    lastUpdated ==
+                            null // ✅ was _lastUpdated
+                        ? 'Updated just now'
+                        : 'Last updated: ${_formatTime(context, lastUpdated!)}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: onRefresh, // ✅ uses callback prop
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 10),
-              _buildWeatherCard(),
-              const SizedBox(height: 24),
-              _buildDetailsSection(context), // ✅ context passed
-              const SizedBox(height: 20),
-              Text(
-                lastUpdated ==
-                        null // ✅ was _lastUpdated
-                    ? 'Updated just now'
-                    : 'Last updated: ${_formatTime(context, lastUpdated!)}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70),
+                  const SizedBox(height: 10),
+                ],
               ),
-              const SizedBox(height: 10),
-            ],
-          );
+      ),
+    );
   }
 }
